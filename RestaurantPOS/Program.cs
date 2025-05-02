@@ -11,8 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add Razor Pages and Controllers
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
-
-// Configure DbContext with Pomelo provider
+builder.Services.AddSession();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
@@ -31,7 +31,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseSession();
 app.UseRouting();
 
 app.UseAuthorization();

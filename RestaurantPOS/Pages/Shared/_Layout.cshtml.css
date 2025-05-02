@@ -46,3 +46,19 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+/* Make navbar text slightly smaller */
+.navbar-text {
+  font-size: 0.9rem;
+}
+
+/* Highlight active nav links */
+.nav-link.active {
+  color: #fff !important;
+  background-color: #1b6ec2;
+  border-radius: 0.25rem;
+}
+
+/* Improve navbar link hover effect */
+.nav-link:hover {
+  color: #cce6ff !important;
+}

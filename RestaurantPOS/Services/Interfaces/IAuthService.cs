@@ -6,4 +6,5 @@ namespace RestaurantPOS.Services.Interfaces;
 public interface IAuthService
 {
     Task<LoginResponseDTO?> LoginAsync(LoginRequestDTO loginRequest);
+    Task<bool> RegisterAsync(RegisterRequestDTO registerRequest);
 }

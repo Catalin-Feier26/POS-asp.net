@@ -1,0 +1,82 @@
+﻿@page
+@model RestaurantPOS.Pages.Auth.Register
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Create Account</h2>
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm-password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Register</button>
+                        <div id="error-msg" class="mt-2 text-danger text-center"></div>
+                        <div id="success-msg" class="mt-2 text-success text-center"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.getElementById("register-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const confirmPassword = document.getElementById("confirm-password").value.trim();
+    const errorMsg = document.getElementById("error-msg");
+    const successMsg = document.getElementById("success-msg");
+
+    errorMsg.innerText = "";
+    successMsg.innerText = "";
+
+    if (password !== confirmPassword) {
+        errorMsg.innerText = "Passwords do not match.";
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost:7206/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        if (response.ok) {
+            successMsg.innerText = "Registration successful! Redirecting to login...";
+            setTimeout(() => {
+                window.location.href = "/Auth/Login";
+            }, 1500);
+        } else {
+            const error = await response.json();
+            errorMsg.innerText = error.message || "Registration failed.";
+        }
+    } catch (err) {
+        errorMsg.innerText = "Server error. Please try again later.";
+        console.error(err);
+    }
+});
+</script>
+}

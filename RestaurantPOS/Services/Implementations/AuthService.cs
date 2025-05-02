@@ -2,6 +2,7 @@
 using RestaurantPOS.Data;
 using RestaurantPOS.DTOs.RequestDTOs;
 using RestaurantPOS.DTOs.ResponseDTOs;
+using RestaurantPOS.Models;
 using RestaurantPOS.Services.Interfaces;
 
 namespace RestaurantPOS.Services.Implementations;
@@ -29,5 +30,23 @@ public class AuthService : IAuthService
             Email = user.Email,
             Role = user.Role.ToString()
         };
+    }
+
+    public async Task<bool> RegisterAsync(RegisterRequestDTO registerRequest)
+    {
+        if (await _dbContext.Users.AnyAsync(u =>
+                u.Username == registerRequest.Username || u.Email == registerRequest.Email))
+            return false;
+        var user = new User
+        {
+            Username = registerRequest.Username,
+            Email = registerRequest.Email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password),
+            Role = UserRoles.Server
+        };
+        _dbContext.Users.Add(user);
+        await _dbContext.SaveChangesAsync();
+
+        return true;
     }
 }
