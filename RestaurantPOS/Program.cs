@@ -20,7 +20,7 @@ builder.Services.AddHttpClient();
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-
+builder.Services.AddScoped<IMenuService, MenuService>();
 var app = builder.Build();
 
 // Configure middleware
