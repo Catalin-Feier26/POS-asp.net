@@ -16,7 +16,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
-
+builder.Services.AddHttpClient();
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -35,7 +35,6 @@ app.UseStaticFiles();
 app.UseSession();
 app.UseRouting();
 
-app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();
