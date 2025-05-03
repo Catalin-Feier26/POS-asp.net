@@ -10,7 +10,7 @@ public class ApplicationDbContext : DbContext
     
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<MenuItem> MenuItems { get; set; } = null!;
-    
+    public DbSet<Table> Tables { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
