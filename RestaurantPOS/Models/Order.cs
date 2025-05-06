@@ -9,8 +9,8 @@ public class Order
 
     [Required]
     public int TableId { get; set; }
-    [ForeignKey("TableId")]
-    public Table Table { get; set; }
+
+    [ForeignKey("TableId")] public Table Table { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

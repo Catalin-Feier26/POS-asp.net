@@ -38,7 +38,6 @@
     </tr>
     </thead>
     <tbody id="tables-table-body">
-    <!-- Filled dynamically -->
     </tbody>
 </table>
 
@@ -72,91 +71,188 @@
     </div>
 </div>
 
+<!-- Orders Modal -->
+<div class="modal fade" id="ordersModal" tabindex="-1" aria-labelledby="ordersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ordersModalLabel">Orders</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="ordersModalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    <script>
-        async function loadTables() {
-            const response = await fetch('/api/table');
-            const tables = await response.json();
-            const tbody = document.getElementById('tables-table-body');
-            tbody.innerHTML = '';
-            tables.forEach(t => {
-                tbody.innerHTML += `
-                <tr>
-                    <td>${t.id}</td>
-                    <td>${t.number}</td>
-                    <td>${t.status}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" onclick="openUpdateModal(${t.id}, ${t.number}, '${t.status}')">Update</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteTable(${t.id})">Delete</button>
-                    </td>
-                </tr>
+<script>
+    let menuItems = [];
+
+    async function loadMenuItems() {
+        const response = await fetch('/api/menu');
+        menuItems = await response.json();
+    }
+
+    async function loadTables() {
+        const response = await fetch('/api/table');
+        const tables = await response.json();
+        const tbody = document.getElementById('tables-table-body');
+        tbody.innerHTML = '';
+        tables.forEach(t => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${t.id}</td>
+                <td>${t.number}</td>
+                <td>${t.status}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="openUpdateModal(${t.id}, ${t.number}, '${t.status}')">Update</button>
+                    <button class="btn btn-sm btn-primary" onclick="loadOrders(${t.id})">Orders</button>
+                    <button class="btn btn-sm btn-success" onclick="createOrder(${t.id})">Create Order</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteTable(${t.id})">Delete</button>
+                </td>
+            </tr>
             `;
+        });
+    }
+
+    async function createTable(e) {
+        e.preventDefault();
+        const number = parseInt(document.getElementById('create-number').value);
+        const status = document.getElementById('create-status').value;
+
+        const response = await fetch('/api/table', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ number, status })
+        });
+
+        if (response.ok) {
+            await loadTables();
+            document.getElementById('create-table-form').reset();
+        } else {
+            alert('Failed to create table.');
+        }
+    }
+
+    async function updateTable(e) {
+        e.preventDefault();
+        const id = document.getElementById('update-id').value;
+        const number = parseInt(document.getElementById('update-number').value);
+        const status = document.getElementById('update-status').value;
+
+        const response = await fetch(`/api/table/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ number, status })
+        });
+
+        if (response.ok) {
+            await loadTables();
+            var modal = bootstrap.Modal.getInstance(document.getElementById('updateTableModal'));
+            modal.hide();
+        } else {
+            alert('Failed to update table.');
+        }
+    }
+
+    async function deleteTable(id) {
+        if (!confirm('Are you sure you want to delete this table?')) return;
+        await fetch(`/api/table/${id}`, { method: 'DELETE' });
+        await loadTables();
+    }
+
+    function openUpdateModal(id, number, status) {
+        document.getElementById('update-id').value = id;
+        document.getElementById('update-number').value = number;
+        document.getElementById('update-status').value = status;
+        var modal = new bootstrap.Modal(document.getElementById('updateTableModal'));
+        modal.show();
+    }
+
+    async function loadOrders(tableId) {
+        const response = await fetch(`/api/order/table/${tableId}`);
+        const data = await response.json();
+
+        let html = `<button class="btn btn-sm btn-success mb-2" onclick="createOrder(${tableId})">Create Order</button>`;
+        if (data.length === 0) {
+            html += `<p>No orders yet for this table.</p>`;
+        }
+        data.forEach(order => {
+            html += `<div class="border p-2 mb-2">
+                <strong>Order #${order.id}</strong> (${new Date(order.createdAt).toLocaleString()}) 
+                ${order.isCompleted ? '<span class="badge bg-success">Completed</span>' : '<span class="badge bg-warning">Active</span>'}
+                <ul>`;
+            order.items.forEach(item => {
+                html += `<li>${item.menuItemName} x${item.quantity} ($${item.unitPrice})
+                    ${!order.isCompleted ? `<button class="btn btn-sm btn-outline-danger" onclick="removeItem(${item.id})">Remove</button>` : ''}
+                </li>`;
             });
-        }
+            html += `</ul>
+                ${!order.isCompleted ? `
+                    <select id="menuItem-${order.id}" class="form-select mb-2">
+                        ${menuItems.map(mi => `<option value="${mi.id}">${mi.name} ($${mi.price})</option>`).join('')}
+                    </select>
+                    <input type="number" id="quantity-${order.id}" class="form-control mb-2" placeholder="Quantity" />
+                    <button class="btn btn-sm btn-outline-primary" onclick="addItem(${order.id})">Add Item</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteOrder(${order.id})">Delete Order</button>
+                    <button class="btn btn-sm btn-outline-success" onclick="calculateBill(${order.id})">Calculate Bill</button>
+                ` : ''}
+            </div>`;
+        });
 
-        async function createTable(e) {
-            e.preventDefault();
-            const number = parseInt(document.getElementById('create-number').value);
-            const status = document.getElementById('create-status').value;
+        document.getElementById('ordersModalBody').innerHTML = html;
 
-            const response = await fetch('/api/table', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ number, status })
-            });
+        let ordersModal = bootstrap.Modal.getInstance(document.getElementById('ordersModal'))
+            || new bootstrap.Modal(document.getElementById('ordersModal'));
+        ordersModal.show();
 
-            if (response.ok) {
-                await loadTables();
-                document.getElementById('create-table-form').reset();
-            } else {
-                alert('Failed to create table.');
-            }
-        }
+    }
 
-        async function updateTable(e) {
-            e.preventDefault();
-            const id = document.getElementById('update-id').value;
-            const number = parseInt(document.getElementById('update-number').value);
-            const status = document.getElementById('update-status').value;
+    async function createOrder(tableId) {
+        await fetch('/api/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tableId })
+        });
+        await loadTables();
+        await loadOrders(tableId);
+    }
 
-            const response = await fetch(`/api/table/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ number, status })
-            });
+    async function addItem(orderId) {
+        const menuItemId = document.getElementById(`menuItem-${orderId}`).value;
+        const quantity = document.getElementById(`quantity-${orderId}`).value;
+        await fetch(`/api/order/${orderId}/add-item`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ menuItemId, quantity })
+        });
+        await loadTables();
+        await loadOrders(orderId);
+    }
 
-            if (response.ok) {
-                await loadTables();
-                var modal = bootstrap.Modal.getInstance(document.getElementById('updateTableModal'));
-                modal.hide();
-            } else {
-                alert('Failed to update table.');
-            }
-        }
+    async function removeItem(orderItemId) {
+        await fetch(`/api/order/remove-item/${orderItemId}`, { method: 'DELETE' });
+        await loadTables();
+    }
 
-        async function deleteTable(id) {
-            if (!confirm('Are you sure you want to delete this table?')) return;
+    async function deleteOrder(orderId) {
+        await fetch(`/api/order/${orderId}`, { method: 'DELETE' });
+        await loadTables();
+    }
 
-            const response = await fetch(`/api/table/${id}`, { method: 'DELETE' });
+    async function calculateBill(orderId) {
+        const response = await fetch(`/api/order/${orderId}/calculate-bill`);
+        const bill = await response.json();
+        alert(`Total Amount: $${bill.totalAmount}`);
+    }
 
-            if (response.ok) {
-                await loadTables();
-            } else {
-                alert('Failed to delete table.');
-            }
-        }
+    document.getElementById('create-table-form').addEventListener('submit', createTable);
+    document.getElementById('update-table-form').addEventListener('submit', updateTable);
 
-        function openUpdateModal(id, number, status) {
-            document.getElementById('update-id').value = id;
-            document.getElementById('update-number').value = number;
-            document.getElementById('update-status').value = status;
-            var modal = new bootstrap.Modal(document.getElementById('updateTableModal'));
-            modal.show();
-        }
-
-        document.getElementById('create-table-form').addEventListener('submit', createTable);
-        document.getElementById('update-table-form').addEventListener('submit', updateTable);
-
-        loadTables();
-    </script>
+    (async function initialize() {
+        await loadMenuItems();
+        await loadTables();
+    })();
+</script>
 }

@@ -9,13 +9,13 @@ public class OrderItem
     
     [Required]
     public int OrderId { get; set; }
-    [ForeignKey("OrderId")]
-    public Order Order { get; set; }
+
+    [ForeignKey("OrderId")] public Order Order { get; set; } = null!;
     
     [Required]
     public int MenuItemId { get; set; }
     [ForeignKey("MenuItemId")]
-    public MenuItem MenuItem { get; set; }
+    public MenuItem MenuItem { get; set; } = null!;
     
     [Required]
     public int Quantity { get; set; }

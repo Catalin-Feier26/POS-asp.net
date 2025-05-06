@@ -128,6 +128,8 @@ public class OrderService : IOrderService
             }).ToList()
         };
 
+        order.IsCompleted = true;
+        await _dbContext.SaveChangesAsync();
         return bill;
     }
 }
